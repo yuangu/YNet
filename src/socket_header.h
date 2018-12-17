@@ -12,7 +12,11 @@
 //#define errno WSAGetLastError()
 	#pragma comment(lib, "ws2_32.lib")
 #else
-
+	#include <sys/socket.h>
+	#include <arpa/inet.h>
+	#include <unistd.h>
+	#include <fcntl.h>
+	#include <errno.h>
 	# define SOCKET_FD   int
 #endif
 
