@@ -4,7 +4,8 @@ project(YNet)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 11)
 
-file(GLOB SRC_FILES  "src/*.cpp" )
+file(GLOB_RECURSE SRC_FILES  "src/*.cpp" )
+include_directories("./src")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     add_compile_options(-fPIC)
@@ -14,6 +15,9 @@ elseif(MSVC)
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 endif()
 
-
-
 add_library(YNet STATIC ${SRC_FILES})
+
+project(example)
+add_executable(example test.cpp)
+target_link_libraries(example
+YNet)
