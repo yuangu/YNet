@@ -21,7 +21,7 @@ bool YTCPServer::isKeepalive()
 {
 	int optval = 0;
 	int len;
-	getOption(SOL_SOCKET, SO_KEEPALIVE, &optval, &len);
+	getOption(SOL_SOCKET, SO_KEEPALIVE, &optval, (socklen_t*)&len);
 	return (optval == 0);
 }
 

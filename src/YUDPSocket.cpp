@@ -13,7 +13,7 @@ int  YUDPSocket::receiveFrom(YAddress* address, char *buffer, size_t size)
 		len = sizeof(struct sockaddr_in);
 	}
 	struct sockaddr_storage add;
-	auto  ret = ::recvfrom(fd(), buffer, size, 0, (struct sockaddr*)&add, (int*)&len);
+	auto  ret = ::recvfrom(fd(), buffer, size, 0, (struct sockaddr*)&add, (socklen_t*)&len);
 	address->reset(&add);
 	return  ret;
 }
@@ -36,7 +36,7 @@ bool YUDPSocket::canBroadcast()
 {
 	bool broadcast;
 	int len;
-	getOption(SOL_SOCKET, SO_BROADCAST, &broadcast, &len);
+	getOption(SOL_SOCKET, SO_BROADCAST, &broadcast, (socklen_t*)&len);
 	return broadcast;
 }
 

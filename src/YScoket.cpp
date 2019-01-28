@@ -118,11 +118,11 @@ void YSocket::setBlocking(bool blocking)
 	if (blocking) 
 	{
 		flags = flags & ~O_NONBLOCK;
-		ret = fcntl(mfd, F_SETFL, flags);
+		fcntl(mfd, F_SETFL, flags);
 	}else
 	{
 		flags = flags | O_NONBLOCK;
-		ret = fcntl(mfd, F_SETFL, flags);
+		fcntl(mfd, F_SETFL, flags);
 	}
 #endif
 }
@@ -145,7 +145,7 @@ bool YSocket::close()
 #if YG_PLATFORM == YG_PLATFORM_WIN32
 	return closesocket(mfd) == 0;
 #else
-	return close(mfd) == 0;
+	return ::close(mfd) == 0;
 #endif
 }
 
@@ -163,7 +163,7 @@ unsigned int YSocket::getTimeout()
 	return recvtimeout / 1000;
 #else
 	unsigned int recvtimeout;
-	getOption(SOL_SOCKET, SO_RCVTIMEO,&recvtimeout, &len);
+	getOption(SOL_SOCKET, SO_RCVTIMEO,&recvtimeout, (socklen_t*)&len);
 	return recvtimeout;
 #endif
 }
