@@ -20,11 +20,13 @@ struct __WSAStartup__AutoIniter__
 
 YSocket::YSocket()
 {
+	mPoll = nullptr;
 	mfd = INVALID_FD;
 }
 
 YSocket::YSocket(SOCKET_FD fd)
 {
+	mPoll = nullptr;
 	assert(fd != INVALID_FD);
 	mfd = fd;
 }

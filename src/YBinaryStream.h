@@ -35,7 +35,18 @@ public:
 		auto num = readNumber<uint32_t>();
 		return ntohl(num);
 	}
-
+    
+	int16_t readShort()
+	{
+		auto num = readNumber<int16_t>();
+		return ntohs(num);
+	}
+	
+	uint16_t readUShort()
+	{
+		auto num = readNumber<uint16_t>();
+		return ntohs(num);
+	}
 
 	int64_t readLong()
 	{

@@ -2,6 +2,8 @@
 
 #include "YUDPSocket.h"
 #include "YAddress.h"
+#include "YBinaryStream.h"
+
 
 //https://jocent.me/2017/06/18/dns-protocol-principle.html#_label1_0
 struct DNS_HEADER {
@@ -25,10 +27,12 @@ struct DNS_HEADER {
 	unsigned short add_count; // 表示附加区域的数量
 };
 
+#pragma pack(push, 1)
 struct QUESTION {
 	unsigned short qtype; //type of the query , A , MX , CNAME , NS etc  1A, 28AA
 	unsigned short qclass; //通常为1，表明是Internet数据
 };
+#pragma pack(pop)
 
 #pragma pack(push, 1)
 struct R_DATA {
@@ -47,7 +51,7 @@ struct RES_RECORD {
 
 bool YDNSResolver::lookupByName(std::string& host)
 {	
-	size_t size = sizeof(DNS_HEADER) + sizeof(QUESTION) + host.length() + 2;
+	size_t size = sizeof(DNS_HEADER) + sizeof(QUESTION) + host.length() + 2 ;
 	char* buff = new char[size];
 	struct DNS_HEADER *dns = (DNS_HEADER*) buff;
 
@@ -69,44 +73,47 @@ bool YDNSResolver::lookupByName(std::string& host)
 
 	char* qname = buff + sizeof(struct DNS_HEADER);
 	ChangetoDnsNameFormat(qname, host.c_str());
-	struct QUESTION *qinfo = (struct QUESTION *) buff + sizeof(struct DNS_HEADER) + host.length() + 2; //fill it
+	struct QUESTION *qinfo = (struct QUESTION *) (buff + sizeof(DNS_HEADER) + host.length() + 2); //fill it
 
 	qinfo->qtype = htons(1); //type of the query , A , MX , CNAME , NS etc  1A, 28AA
 	qinfo->qclass = htons(1); //通常为1，表明是Internet数据
 
 	YUDPSocket client;
-	YAddress address(std::string("8.8.8.8"), 53);
+	YAddress address(std::string("1.1.1.1"), 53);
 	client.sendTo(&address, buff, size);
 
 	char _buff[1024] = {0x00};
-	client.receiveFrom(&address, _buff, 1024);
+	int len = client.receiveFrom(&address, _buff, 1024);
 
 	DNS_HEADER* header = (DNS_HEADER*)_buff;
 	header->id;
 	header->qr;
 
 	char* tmp = _buff + size;
-	bool isFrist = true;
-	while (*(tmp++) != '\0')
+	BinaryInputStream stream(tmp, len - size);
+	while (!stream.endOfStream())
 	{
-		isFrist = false;
+		bool isFrist = true;
+		std::string host;
+		while (stream.readByte() != '\0')
+		{
+			isFrist = false;
+		}
+		if (isFrist)
+		{
+			tmp++;
+		}
+
+		unsigned short qtype = stream.readUShort();
+		unsigned short qclass = stream.readUShort();
+		unsigned short  ttl = stream.readUint();
+		unsigned short dataLeng = stream.readUShort();
+		std::string d = stream.readString(dataLeng);
 	}
-	if (isFrist)
-	{
-		tmp++;
-	}
+	
+	
 
-	QUESTION *q = (QUESTION *)tmp;
-	tmp += sizeof(QUESTION);
-
-	int *num = (int *)tmp;
-	int ttl = htonl(*num);
-	tmp += 4;
-
-	unsigned short* num2 = (unsigned short*)tmp;
-	unsigned short dataLen = htons(*num2);
-	tmp += 2;
-	std::string d = std::string(tmp, dataLen);
+	
 
 	return true;
 }
