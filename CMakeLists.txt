@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 11)
 
 
-file(GLOB SRC_FILES  "src/*.cpp" )
+file(GLOB_RECURSE SRC_FILES  "src/*.cpp" )
 include_directories("./src")
 
 if(CMAKE_COMPILER_IS_GNUCXX)

@@ -4,6 +4,7 @@
 #include "YAddress.h"
 #include "YBinaryStream.h"
 
+#define DNS_SERVER_PORT 53
 
 //https://jocent.me/2017/06/18/dns-protocol-principle.html#_label1_0
 struct DNS_HEADER {
@@ -44,12 +45,12 @@ struct R_DATA {
 #pragma pack(pop)
 
 struct RES_RECORD {
-	unsigned char* name;
-	struct R_DATA *resource;
-	unsigned char* rdata;
+	std::string name;
+	struct R_DATA  resource;
+	std::vector<char> rdata;
 };
 
-bool YDNSResolver::lookupByName(std::string& host)
+bool YDNSResolver::lookupByName(std::string& host, std::vector<std::string>& ret, YDNSType type, const char* DNSServer)
 {	
 	size_t size = sizeof(DNS_HEADER) + sizeof(QUESTION) + host.length() + 2 ;
 	char* buff = new char[size];
@@ -72,14 +73,14 @@ bool YDNSResolver::lookupByName(std::string& host)
 	dns->add_count = 0;
 
 	char* qname = buff + sizeof(struct DNS_HEADER);
-	ChangetoDnsNameFormat(qname, host.c_str());
+	changetoDnsNameFormat(qname, host.c_str());
 	struct QUESTION *qinfo = (struct QUESTION *) (buff + sizeof(DNS_HEADER) + host.length() + 2); //fill it
 
-	qinfo->qtype = htons(1); //type of the query , A , MX , CNAME , NS etc  1A, 28AA
+	qinfo->qtype = htons((short)type); //type of the query , A , MX , CNAME , NS etc  1A, 28AA
 	qinfo->qclass = htons(1); //通常为1，表明是Internet数据
 
 	YUDPSocket client;
-	YAddress address(std::string("1.1.1.1"), 53);
+	YAddress address(std::string(DNSServer), DNS_SERVER_PORT);
 	client.sendTo(&address, buff, size);
 
 	char _buff[1024] = {0x00};
@@ -89,37 +90,129 @@ bool YDNSResolver::lookupByName(std::string& host)
 	header->id;
 	header->qr;
 
-	char* tmp = _buff + size;
-	BinaryInputStream stream(tmp, len - size);
-	while (!stream.endOfStream())
+	char* tmp = _buff + 12;
+	
+	//请求区域
+	for (int i = 0; i < ntohs( header->q_count); ++i)
 	{
-		bool isFrist = true;
-		std::string host;
-		while (stream.readByte() != '\0')
-		{
-			isFrist = false;
-		}
-		if (isFrist)
-		{
-			tmp++;
-		}
+		int readLeng = 0;
+		std::string name = readName(_buff, tmp - _buff, readLeng);
+		tmp += readLeng;
 
-		unsigned short qtype = stream.readUShort();
-		unsigned short qclass = stream.readUShort();
-		unsigned short  ttl = stream.readUint();
-		unsigned short dataLeng = stream.readUShort();
-		std::string d = stream.readString(dataLeng);
+		QUESTION* question = (QUESTION*)(tmp);
+		question->qtype = ntohs(question->qtype);
+		
+		tmp += sizeof(QUESTION);
+	}
+
+	int ans_count = ntohs(header->ans_count);
+	for (int i = 0; i < ans_count; ++i)
+	{
+		int readLeng = 0;
+		std::string name = readName(_buff, tmp - _buff, readLeng);
+		tmp += readLeng;
+
+		R_DATA* rData = (R_DATA*)(tmp);
+		rData->ttl = ntohl(rData->ttl);
+		rData->type = ntohs(rData->type);
+		rData->_class = ntohs(rData->_class);	
+		rData->data_len = ntohs(rData->data_len);
+
+		tmp += sizeof(R_DATA);
+				
+		
+		switch (rData->type)
+		{
+		case DNSType_A:
+		{
+			char IPdotdec[INET_ADDRSTRLEN] = { 0x00 };
+			inet_ntop(AF_INET, (void *)tmp, IPdotdec, INET_ADDRSTRLEN);
+			std::string ipStr = IPdotdec;
+			ret.push_back(ipStr);
+			break;
+		}
+		case DNSType_AAA:
+		{
+			char IPdotdec[INET6_ADDRSTRLEN] = { 0x00 };
+			inet_ntop(AF_INET6, (void *)tmp, IPdotdec, 20);
+			std::string ipStr = IPdotdec;
+			ret.push_back(ipStr);
+		}
+		default:
+			break;
+		}
+		
+		/*	std::string data;
+		data.append(tmp + rData->data_len, ntohs(rData->data_len));*/
+		tmp += rData->data_len;
 	}
 	
-	
+	for (int i = 0; i<ntohs(dns->add_count); i++)
+	{
+		int readLeng = 0;
+		std::string name = readName(_buff, tmp - _buff, readLeng);
+		tmp += readLeng;
 
-	
+		R_DATA* rData = (R_DATA*)(tmp);
+		rData->ttl = ntohl(rData->ttl);
+		rData->type = ntohs(rData->type);
+		rData->_class = ntohs(rData->_class);
+		rData->data_len = ntohs(rData->data_len);
+		tmp += sizeof(R_DATA);
 
+		/*	std::string data;
+		data.append(tmp + rData->data_len, ntohs(rData->data_len));*/
+
+		tmp += rData->data_len;
+	}
 	return true;
 }
 
 
-void YDNSResolver::ChangetoDnsNameFormat(char *dns, const char *host) {
+std::string YDNSResolver::readName(char* buff, int off, int& readLeng)
+{
+	std::string name;
+	char* tmp = buff + off;
+	bool isFrist = true;
+	bool isJump = false;
+	char strBuff[50] = { 0x00 };
+	readLeng = 0;
+
+	do {
+		unsigned char num = *tmp++;
+		if (num >= 0xc0)
+		{
+			int offset = num * 256 + (unsigned char)*(tmp) - 49152; //49152 = 11000000 00000000 ;)
+			tmp = buff + offset;
+			if (!isJump) readLeng += 2;
+			isJump = true;
+			continue;
+		}
+
+		if (num == '\0')
+		{
+			if (!isJump)  readLeng += 1;
+			break;
+		}
+		if (isFrist)
+		{
+			isFrist = false;
+		}
+		else
+		{
+			name.append(".", 1);
+		}
+		memcpy(strBuff, tmp , num);
+		strBuff[num] = '\0';
+		name.append(strBuff, (size_t)num);
+		tmp = tmp + num ;
+		if (!isJump) readLeng += num + 1;
+	} while (true);
+	
+	return name;
+}
+
+void YDNSResolver::changetoDnsNameFormat(char *dns, const char *host) {
 	char* tmp = dns + strlen(host) + 1;
 	*tmp-- = '\0';
 	

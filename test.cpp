@@ -3,6 +3,7 @@
 
 int main() {
 	YDNSResolver resolver;
-	resolver.lookupByName(std::string("www.baidu.com"));
+	std::vector<std::string> ret;
+	resolver.lookupByName(std::string("www.google.com"), ret);
 	return 0;
 }
