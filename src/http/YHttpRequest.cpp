@@ -1,14 +1,24 @@
 #include "http/YHttpRequest.h"
+#include <stdlib.h>
+#include <stdio.h>
 #include "http/YURL.h"
 #include "YAddress.h"
+
 
 YHttpHeader& YHttpRequest::getHeader()
 {
 	return mHeader;
 }
 
+void YHttpRequest::request(const std::string &method, const std::string &url, YHttpAsyncData* data)
+{
+	mHeader.addHeader(ContentLength, data->lenth());
+	mYHttpAsyncData = data;
+	request(method, url);
+}
+
 //请求
-void YHttpRequest::request(const std::string &method, const std::string &url, std::vector<char>* data )
+void YHttpRequest::request(const std::string &method, const std::string &url, std::vector<char>* data)
 {
 	reset();
 	YURL yURL(url);
@@ -33,7 +43,7 @@ void YHttpRequest::request(const std::string &method, const std::string &url, st
 	unsigned short port = 80;
 	if (yURL.getPort().length() > 0)
 	{
-		port =  std::atoi(yURL.getPort().c_str());
+		port = atoi(yURL.getPort().c_str());
 	}
 
 	std::string headerStr = mHeader.buildHeader(method, headUrl, VersionHTTP1_1);
@@ -43,10 +53,11 @@ void YHttpRequest::request(const std::string &method, const std::string &url, st
 	{
 		mWillSendData.insert(mWillSendData.end(), data->begin(), data->end());
 	}
-
-	YAddress address((std::string)yURL.getHost(), port);
+	
+	std::string serverHost = yURL.getHost();
+	YAddress address(serverHost, port);
 	mClient.onRead(std::bind(&YHttpRequest::onTCPRead, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	mClient.onConnect(std::bind(&YHttpRequest::onTCPConnect, this,  std::placeholders::_1));
+	mClient.onConnect(std::bind(&YHttpRequest::onTCPConnect, this, std::placeholders::_1));
 	mClient.onClose(std::bind(&YHttpRequest::onTCPClose, this, std::placeholders::_1));
 
 	//连接服务器
@@ -77,15 +88,33 @@ void YHttpRequest::onTCPRead(YTCPClient* client, const char* buff, int dataLen)
 
 void YHttpRequest::onTCPClose(YSocket*)
 {
-
+	if (mCloseCallBack)
+	{
+		mCloseCallBack(this);
+	}
 }
 
 void YHttpRequest::onTCPConnect(YSocket*)
 {
 	mClient.send(&(mWillSendData[0]), mWillSendData.size());
-	
-	char buff[1024];
-	mClient.receive(buff, 1024);
+	if (!mYHttpAsyncData) return;
+
+	int begin = 0;
+
+	while (true)
+	{
+		int end = begin + 1024;
+		if (end > mYHttpAsyncData->lenth())
+		{
+			end = mYHttpAsyncData->lenth();
+		}
+		mYHttpAsyncData->data(begin, end);
+		begin = end + 1;
+		if (begin > mYHttpAsyncData->lenth())
+		{
+			break;
+		}
+	}
 }
 
 void YHttpRequest::setIOPoll(IOPoll* poll)
@@ -95,6 +124,7 @@ void YHttpRequest::setIOPoll(IOPoll* poll)
 
 void YHttpRequest::reset()
 {
+	mYHttpAsyncData = nullptr;
 	mYHttpRespond.rest();
 }
 
@@ -102,4 +132,9 @@ void YHttpRequest::reset()
 void YHttpRequest::onRead(HttpRecvEventCallBack callBack)
 {
 	mReadCallBack = callBack;
+}
+
+void YHttpRequest::onClose(HTTPEventCallBack  callBack)
+{
+	mCloseCallBack = callBack;
 }

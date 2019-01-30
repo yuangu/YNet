@@ -2,6 +2,14 @@
 
 #include <vector>
 #include <stdint.h>
+#include "macros.h"
+
+#if YG_PLATFORM == YG_PLATFORM_ANDROID
+	#ifndef ntohll
+		#define ntohll( x ) ( ( ( int64_t )( ntohl( ( int32_t )( ( x << 32 ) >> 32 ) ) ) << 32) | ( uint32_t )ntohl( ( ( int32_t )( x >> 32 ) ) ) )
+		#define htonll( x ) ntohll( x )
+	#endif
+#endif 
 
 class BinaryInputStream
 {

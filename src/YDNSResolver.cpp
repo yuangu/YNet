@@ -1,7 +1,6 @@
 #include "YDNSResolver.h"
-
-#include "YUDPSocket.h"
 #include "YAddress.h"
+#include "YUDPSocket.h"
 #include "YBinaryStream.h"
 
 #define DNS_SERVER_PORT 53
@@ -80,7 +79,8 @@ bool YDNSResolver::lookupByName(std::string& host, std::vector<std::string>& ret
 	qinfo->qclass = htons(1); //通常为1，表明是Internet数据
 
 	YUDPSocket client;
-	YAddress address(std::string(DNSServer), DNS_SERVER_PORT);
+	std::string dnsServerStdStr = std::string(DNSServer);
+	YAddress address(dnsServerStdStr,( unsigned short) DNS_SERVER_PORT);
 	client.sendTo(&address, buff, size);
 
 	char _buff[1024] = {0x00};

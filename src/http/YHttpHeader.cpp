@@ -2,6 +2,9 @@
 #include "http/YHttpHeader.h"
 #include "YStrHelper.h"
 #include <sstream>
+#include <cstdlib>
+#include <string>
+#include <sstream>
 
 void YHttpHeader::addHeader(std::string name, std::string value)
 {
@@ -9,7 +12,7 @@ void YHttpHeader::addHeader(std::string name, std::string value)
 
     if (YStrHelper::isEqual(name, ContentLength)) {
         has_content_length_ = true;
-        content_length_ = std::stol(value);
+        content_length_ = atoi(value.c_str());
     } else if (YStrHelper::isEqual(name, TransferEncoding)) {
         is_chunked_ = YStrHelper::isEqual(Chunked, value);
     }
@@ -18,7 +21,9 @@ void YHttpHeader::addHeader(std::string name, std::string value)
 
 void YHttpHeader::addHeader(std::string name, uint32_t value)
 {
-    addHeader(std::move(name), std::to_string(value));
+    std::stringstream ss;
+    ss << value;
+    addHeader(std::move(name), ss.str());
 }
 
 bool YHttpHeader::hasHeader(const std::string &name) const

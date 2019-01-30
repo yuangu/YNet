@@ -79,7 +79,6 @@ void YTCPClient::onConnect(SocketEventCallBack callBack)
 
 }
 
-
 void YTCPClient::onErrorCallBack()
 {
 	YSocket::onErrorCallBack();
