@@ -18,6 +18,23 @@ endif()
 
 add_library(YNet STATIC ${SRC_FILES})
 
+option(HAS_TEST "is need test project"  OFF)
+if(HAS_TEST)
+    include_directories(${Project_SOURCE_DIR}/googletest/googletest/include)
+    set(BUILD_GMOCK OFF) #close gmock
+    add_subdirectory(googletest)
+    IF(MSVC)
+        message("run here")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    endif()
+    project(YURLTest)
+    add_executable(YURLTest test/YURLTest.cpp)
+    target_link_libraries(YURLTest
+    gtest gtest_main YNet)
+endif()
+
+
 project(example)
 add_executable(example test.cpp)
 target_link_libraries(example
