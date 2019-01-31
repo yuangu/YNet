@@ -16,11 +16,16 @@ elseif(MSVC)
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 endif()
 
+set(ENABLE_PROGRAMS OFF)
+set(ENABLE_TESTING OFF)
+set(INSTALL_MBEDTLS_HEADERS OFF)
+include_directories(${YNet_SOURCE_DIR}/mbedtls/include)
+add_subdirectory(mbedtls)
 add_library(YNet STATIC ${SRC_FILES})
 
 option(HAS_TEST "is need test project"  OFF)
 if(HAS_TEST)
-    include_directories(${Project_SOURCE_DIR}/googletest/googletest/include)
+    include_directories(${YNet_SOURCE_DIR}/googletest/googletest/include)
     set(BUILD_GMOCK OFF) #close gmock
     add_subdirectory(googletest)
     IF(MSVC)
@@ -38,4 +43,4 @@ endif()
 project(example)
 add_executable(example test.cpp)
 target_link_libraries(example
-YNet)
+YNet mbedtls)
