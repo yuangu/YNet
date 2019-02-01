@@ -1,5 +1,6 @@
 #include "YTCPClient.h"
 #include "YAddress.h"
+#include "ssl/YTLS.h"
 
 bool YTCPClient::connect(YAddress* address)
 {
@@ -14,7 +15,12 @@ bool YTCPClient::connect(YAddress* address)
 	{
 		len = sizeof(struct sockaddr_in);
 	}
-	return ::connect(fd(), (struct sockaddr*)(address->getSocketAddr()), len) == 0;
+	auto ret = ::connect(fd(), (struct sockaddr*)(address->getSocketAddr()), len) == 0;
+	if (ret && mIsEableSSL)
+	{
+		return mYTLS->handshake();
+	}
+	return ret;
 }
 
 bool YTCPClient::isConnected()
@@ -24,7 +30,14 @@ bool YTCPClient::isConnected()
 
 int  YTCPClient::receive(char *buffer, size_t size)
 {
-	return ::recv(fd(), buffer, size, 0);
+	if (mIsEableSSL)
+	{
+		return mYTLS->receive(buffer, size);
+	}
+	else
+	{
+		return ::recv(fd(), buffer, size, 0);
+	}	
 }
 
 int  YTCPClient::send(const char *buffer, size_t size)
@@ -32,7 +45,17 @@ int  YTCPClient::send(const char *buffer, size_t size)
 	auto sendNum = 0;
 	while (true)
 	{
-		auto num = ::send(fd(), buffer + sendNum, size - sendNum, 0);
+		int num = 0;
+		
+		if (mIsEableSSL)
+		{
+			num = mYTLS->send(buffer + sendNum, size - sendNum);
+		}
+		else
+		{
+			num = ::send(fd(), buffer + sendNum, size - sendNum, 0);
+		}
+		
 		if (num <= 0)
 		{
 			break;

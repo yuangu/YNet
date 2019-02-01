@@ -25,7 +25,8 @@ public:
 	void setIOPoll(IOPoll*);
 	void onClose(HTTPEventCallBack);
 	void onRead(HttpRecvEventCallBack);
-
+	//同步请求接口
+	void perform();
 private:
 	void onTCPRead(YTCPClient*, const char*, int);
 	void onTCPClose(YSocket*);

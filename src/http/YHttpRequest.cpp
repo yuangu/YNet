@@ -4,6 +4,7 @@
 #include "http/YURL.h"
 #include "YAddress.h"
 
+#include "YStrHelper.h"
 
 YHttpHeader& YHttpRequest::getHeader()
 {
@@ -22,7 +23,7 @@ void YHttpRequest::request(const std::string &method, const std::string &url, st
 {
 	reset();
 	YURL yURL(url);
-	yURL.getScheme();
+	
 
 	//添加host头
 	std::string host = yURL.getHost();
@@ -40,10 +41,17 @@ void YHttpRequest::request(const std::string &method, const std::string &url, st
 		headUrl.append("?");
 		headUrl.append(yURL.getQuery());
 	}
+	
 	unsigned short port = 80;
+
+
 	if (yURL.getPort().length() > 0)
 	{
 		port = atoi(yURL.getPort().c_str());
+	}
+	else if (YStrHelper::isEqual(yURL.getScheme(), "https"))
+	{
+		port = 443;
 	}
 
 	std::string headerStr = mHeader.buildHeader(method, headUrl, VersionHTTP1_1);
@@ -61,6 +69,8 @@ void YHttpRequest::request(const std::string &method, const std::string &url, st
 	mClient.onClose(std::bind(&YHttpRequest::onTCPClose, this, std::placeholders::_1));
 
 	//连接服务器
+	bool isEnableSll = YStrHelper::isEqual(yURL.getScheme(), "https") ? true : false;
+	mClient.setSSLFlag(isEnableSll);
 	mClient.connect(&address);
 }
 
@@ -137,4 +147,19 @@ void YHttpRequest::onRead(HttpRecvEventCallBack callBack)
 void YHttpRequest::onClose(HTTPEventCallBack  callBack)
 {
 	mCloseCallBack = callBack;
+}
+
+void YHttpRequest::perform()
+{
+	onTCPConnect(&mClient);
+	char buff[1024] = {0x00};
+	auto size = 0;
+	
+	while (true)
+	{
+		size = mClient.receive(buff, 1024);
+		if (size <= 0) break;
+		onTCPRead(&mClient, buff, size);
+	}
+	
 }

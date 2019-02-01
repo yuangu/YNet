@@ -1,6 +1,8 @@
 #include "YScoket.h"
 #include <assert.h>
 #include "YAddress.h"
+#include "ssl/YMbedtls.h"
+
 
 #if YG_PLATFORM == YG_PLATFORM_WIN32
 struct __WSAStartup__AutoIniter__
@@ -22,6 +24,8 @@ YSocket::YSocket()
 {
 	mPoll = nullptr;
 	mfd = INVALID_FD;
+	mYTLS = nullptr;
+	mIsEableSSL = false;
 }
 
 YSocket::YSocket(SOCKET_FD fd)
@@ -29,6 +33,8 @@ YSocket::YSocket(SOCKET_FD fd)
 	mPoll = nullptr;
 	assert(fd != INVALID_FD);
 	mfd = fd;
+	mYTLS = nullptr;
+	mIsEableSSL = false;
 }
 
 void YSocket::createSocketIfNecessary(bool isIPV6)
@@ -127,6 +133,15 @@ void YSocket::setBlocking(bool blocking)
 #endif
 }
 
+void YSocket::setSSLFlag(bool enable)
+{
+	mIsEableSSL = enable;
+	if (enable && !mYTLS)
+	{
+		mYTLS = new YMbedtls();	
+		mYTLS->init(this);
+	}
+}
 
 SOCKET_FD YSocket::fd()
 {
@@ -250,5 +265,12 @@ YSocket::~YSocket()
 	if (mPoll)
 	{
 		mPoll->unRegisterFd(fd());
+	}
+
+	if (mYTLS)
+	{
+		mYTLS->clean();
+		delete mYTLS;
+		mYTLS = nullptr;
 	}
 }

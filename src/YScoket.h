@@ -8,6 +8,7 @@
 
 class YAddress;
 class YSocket;
+class YTLS;
 
 typedef std::function<void(YSocket*)> SocketEventCallBack;
 
@@ -18,6 +19,8 @@ public:
 	YSocket(SOCKET_FD fd);
 	virtual ~YSocket();
 	void bind(YAddress* address, bool allow_reuse = true);
+
+	virtual void setSSLFlag(bool enable);
 
 	virtual bool close();
 	bool isClosed();
@@ -53,9 +56,11 @@ protected:
 	IOPoll* mPoll;
 protected:
 	void createSocketIfNecessary(bool isIPV6);
-private:
+protected:
 	bool isBlock;
 	bool mIsClose;
+	bool mIsEableSSL;
+	YTLS* mYTLS;
 	SOCKET_FD mfd;
 };
 
