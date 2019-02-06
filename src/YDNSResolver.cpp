@@ -77,10 +77,12 @@ bool YDNSResolver::lookupByName(std::string& host, std::vector<std::string>& ret
 
 	qinfo->qtype = htons((short)type); //type of the query , A , MX , CNAME , NS etc  1A, 28AA
 	qinfo->qclass = htons(1); //通常为1，表明是Internet数据
-
-	YUDPSocket client;
+	
 	std::string dnsServerStdStr = std::string(DNSServer);
-	YAddress address(dnsServerStdStr,( unsigned short) DNS_SERVER_PORT);
+	YAddress address(dnsServerStdStr, (unsigned short)DNS_SERVER_PORT);
+	YUDPSocket client(address.isIPV6());
+	
+	
 	client.sendTo(&address, buff, size);
 
 	char _buff[1024] = {0x00};
@@ -134,7 +136,7 @@ bool YDNSResolver::lookupByName(std::string& host, std::vector<std::string>& ret
 		case DNSType_AAA:
 		{
 			char IPdotdec[INET6_ADDRSTRLEN] = { 0x00 };
-			inet_ntop(AF_INET6, (void *)tmp, IPdotdec, 20);
+			inet_ntop(AF_INET6, (void *)tmp, IPdotdec, INET6_ADDRSTRLEN);
 			std::string ipStr = IPdotdec;
 			ret.push_back(ipStr);
 		}
