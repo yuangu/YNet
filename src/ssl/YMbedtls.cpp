@@ -106,9 +106,13 @@ int YMbedtls::init(YSocket* socket)
 {
 	 char buffer[50] = {0x00};
 	 unsigned int version = mbedtls_version_get_number();
+	 #if YG_PLATFORM == YG_PLATFORM_WIN32
 	 int size =  _snprintf(buffer, 50, "mbedTLS/%u.%u.%u", version >> 24,
 		 (version >> 16) & 0xff, (version >> 8) & 0xff);
-
+	#else
+	int size =  snprintf(buffer, 50, "mbedTLS/%u.%u.%u", version >> 24,
+		 (version >> 16) & 0xff, (version >> 8) & 0xff);
+	#endif
 	 return std::string(buffer, size);
 }
 

@@ -9,29 +9,22 @@
 
 int main() {
 	YHttpRequest request;
-	request.request("GET", "https://14.215.177.39");
+	request.request("GET", "https://www.baidu.com");
 	
-	//SelectPoll selectPoll;
-	//request.setIOPoll((IOPoll*)&selectPoll);
+	SelectPoll selectPoll;
+	request.setIOPoll((IOPoll*)&selectPoll);
 	request.onRead([](YHttpRequest*, YHttpRespond*, const char* buff, int dataLen) {
 		auto f = fopen("test.html", "a+");
 		fwrite((void*)buff, 1, dataLen, f);
 		fclose(f);
 	});
 
-	request.perform();
-	while (true)
-	{
-		Sleep(1);
+	//request.perform();
 
-	}
-
-
-	/*while (1)
+	while (1)
 	{
 		selectPoll.wait(1000);
-
-	}*/
+	}
 
 
 	/*YTCPClient tcpClient;

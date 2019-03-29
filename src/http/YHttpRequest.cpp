@@ -24,7 +24,6 @@ void YHttpRequest::request(const std::string &method, const std::string &url, st
 	reset();
 	YURL yURL(url);
 	
-
 	//Ìí¼ÓhostÍ·
 	std::string host = yURL.getHost();
 	if (yURL.getPort().length() > 0)

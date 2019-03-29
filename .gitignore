@@ -8,3 +8,5 @@
 /build
 /captures
 .externalNativeBuild
+out/
+src/.vscode/
