@@ -86,8 +86,9 @@ bool YDNSResolver::lookupByName(std::string& host, std::vector<std::string>& ret
 	client.sendTo(&address, buff, size);
 
 	char _buff[1024] = {0x00};
+	client.setTimeout(1);
 	int len = client.receiveFrom(&address, _buff, 1024);
-
+	if (len < 0) return false;
 	DNS_HEADER* header = (DNS_HEADER*)_buff;
 	header->id;
 	header->qr;

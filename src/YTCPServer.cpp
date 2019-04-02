@@ -28,22 +28,26 @@ bool YTCPServer::isKeepalive()
 void YTCPServer::setKeepalive(bool keepAlive)
 {
 	int optval = 1;
+
 	if (keepAlive)
 	{
 		optval = 0;
 	}
 	setOption(SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval));
-#ifdef TCP_KEEPCNT
 
-	setOption(SOL_TCP, TCP_KEEPCNT, &optval, sizeof(optval));
+#ifdef SOL_TCP
+	#ifdef TCP_KEEPCNT 
+		setOption(SOL_TCP, TCP_KEEPCNT, &optval, sizeof(optval));
+	#endif
 
-#endif
-#ifdef TCP_KEEPIDLE
-	setOption(SOL_TCP, TCP_KEEPIDLE, &optval, sizeof(optval));
+	#ifdef TCP_KEEPIDLE
+		setOption(SOL_TCP, TCP_KEEPIDLE, &optval, sizeof(optval));
 
-#endif
-#ifdef TCP_KEEPINTVL
-	setOption(SOL_TCP, TCP_KEEPINTVL, &optval, sizeof(optval));
+	#endif
+
+	#ifdef TCP_KEEPINTVL
+		setOption(SOL_TCP, TCP_KEEPINTVL, &optval, sizeof(optval));
+	#endif
 #endif
 }
 

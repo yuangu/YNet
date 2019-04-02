@@ -30,7 +30,7 @@
 #define VersionHTTP2_0  "HTTP/2.0"
 #define VersionHTTP1_1  "HTTP/1.1"
 #define EmptyString  ""
-#define UserAgent  "ynet 1.0"
+#define UserAgentStr  "ynet/1.0"
 
 #define ContentType "Content-Type"
 #define ContentLength "Content-Length"
@@ -40,7 +40,7 @@
 #define CookieHeaderName "Cookie"
 #define HostHeaderName "Host"
 #define Upgrade "Upgrade"
-
+#define UserAgent "User-Agent" 
 
 typedef std::pair<std::string, std::string> KeyValuePair;
 

@@ -21,8 +21,10 @@ enum YDNSType
 class YDNSResolver
 {
 public:
-	 bool lookupByName(std::string& host, std::vector<std::string>& ret, YDNSType type = DNSType_A, const char* DNSServer = "1.1.1.1");
+	bool lookupByName(std::string& host, std::vector<std::string>& ret, YDNSType type = DNSType_A, const char* DNSServer = "114.114.114.114");
 private:
 	void changetoDnsNameFormat(char *dns, const char *host);
 	std::string readName(char* reader, int off, int& readLeng);
+private:
+	std::string mDNSServer;	
 };

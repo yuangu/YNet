@@ -21,10 +21,7 @@ int main() {
 
 	//request.perform();
 
-	while (1)
-	{
-		selectPoll.wait(1000);
-	}
+	
 
 
 	/*YTCPClient tcpClient;
@@ -37,8 +34,13 @@ int main() {
 	char buff[1024] = {0x00};
 	tcpClient.receive(buff, 1024);*/
 
-	/*YDNSResolver resolver;
+	YDNSResolver resolver;
 	std::vector<std::string> ret;
-	resolver.lookupByName(std::string("www.google.com"), ret);*/
+	resolver.lookupByName(std::string("www.baidu.com"), ret);
+
+	while (1)
+	{
+		selectPoll.wait(1000);
+	}
 	return 0;
 }

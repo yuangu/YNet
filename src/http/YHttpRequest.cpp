@@ -32,7 +32,12 @@ void YHttpRequest::request(const std::string &method, const std::string &url, st
 		host.append(yURL.getPort());
 	}
 	mHeader.addHeader(HostHeaderName, host);
-
+		
+	if (!mHeader.hasHeader(UserAgent))
+	{
+		mHeader.addHeader(UserAgent, UserAgentStr);
+	}
+	
 	std::string headUrl = yURL.getPath();
 
 	if (yURL.getQuery().length() > 0)
