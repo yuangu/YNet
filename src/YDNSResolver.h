@@ -23,6 +23,9 @@ class YDNSResolver
 public:
 	bool lookupByName(std::string& host, std::vector<std::string>& ret, YDNSType type = DNSType_A, const char* DNSServer = "114.114.114.114");
 private:
+	void request(std::string& host, YDNSType type = DNSType_A, const char* DNSServer = "114.114.114.114");
+	void onRespond(const char* _buff);
+
 	void changetoDnsNameFormat(char *dns, const char *host);
 	std::string readName(char* reader, int off, int& readLeng);
 private:
